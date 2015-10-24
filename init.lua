@@ -1,3 +1,15 @@
+--[[ TODO:
+	- Proper black/white ownership by respective player.
+	- Proper turn by turn handling;
+	- Proper piece replacement (ie: if piece A eats piece B, piece B is properly replaced without getting a stack under the cursor);
+	- If a pawn reaches row A or row H -> becomes a queen;
+	- If one of kings is defeat -> the game stops;
+	- Actions recording;
+	- Counter per player.
+--]]
+
+
+
 realchess = {}
 
 function realchess.fs(pos)
@@ -53,89 +65,66 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	local pieceTo = inv:get_stack(to_list, to_index):get_name()
 	local pname = player:get_player_name()
 
-	--print("Piece: "..piece_a.." | from_list: "..from_list.." | from_index: "..from_index.." | Converted 'from_list':"..string.byte(from_list))
-	--print("Piece: "..piece_b.." | to_list: "..to_list.." | to_index: "..to_index.." | Converted 'to_list':"..string.byte(to_list))
+	--print("Piece From: "..pieceFrom.." | from_list: "..from_list.." | from_index: "..from_index.." | Converted 'from_list':"..string.byte(from_list))
+	--print("Piece To: "..pieceTo.." | to_list: "..to_list.." | to_index: "..to_index.." | Converted 'to_list':"..string.byte(to_list))
 
-
+	
+	--[[ Bugginess
 	-- Turn by turn
 	if pieceFrom:find("white") and (meta:get_string("lastMove") == "" or
 			meta:get_string("lastMove") == "black") then
-		if meta:get_string("playerOne") == "" and
-				meta:get_string("playerTwo") == "" then
-			meta:set_string("playerOne", pname)
-			meta:set_string("lastMove", "white")
-			return 1
-		elseif meta:get_string("playerOne") ~= "" and
-				meta:get_string("playerTwo") == "" then
-			meta:set_string("playerTwo", pname)
-			meta:set_string("lastMove", "white")
-			return 1
-		elseif pname ~= meta:get_string("playerOne") or
-				pname ~= meta:get_string("playerTwo") then
-			minetest.chat_send_player(pname, "You can't move the pieces of your opponent !")
-			return 0
-		end
-		return 0
+		meta:set_string("lastMove", "white")
+		meta:set_string("playerOne", pname) -- it's shit
+		return 1
 	elseif pieceFrom:find("white") and meta:get_string("lastMove") == "white" then
 		minetest.chat_send_player(pname, "It's not your turn, wait your opponent to play.")
 		return 0
 	elseif pieceFrom:find("black") and (meta:get_string("lastMove") == "" or
 			meta:get_string("lastMove") == "white") then
-		if meta:get_string("playerOne") == "" and
-				meta:get_string("playerTwo") == "" then
-			meta:set_string("playerOne", pname)
-			meta:set_string("lastMove", "black")
-			return 1
-		elseif meta:get_string("playerOne") ~= "" and
-				meta:get_string("playerTwo") == "" then
-			meta:set_string("playerTwo", pname)
-			meta:set_string("lastMove", "black")
-			return 1
-		elseif pname ~= meta:get_string("playerOne") or
-				pname ~= meta:get_string("playerTwo") then
-			minetest.chat_send_player(pname, "You can't move the pieces of your opponent !")
-			return 0
-		end
-		return 0
+		meta:set_string("lastMove", "black")
+		meta:set_string("playerTwo", pname) -- it's shit
+		return 1
 	elseif pieceFrom:find("black") and meta:get_string("lastMove") == "black" then
 		minetest.chat_send_player(pname, "It's not your turn, wait your opponent to play.")
 		return 0
 	end
-
+	-- ]]
 
 	-- Don't replace pieces of same color
-	if (piece_a:find("white") and piece_b:find("white")) or 
-		(piece_a:find("black") and piece_b:find("black")) then
+	if (pieceFrom:find("white") and pieceTo:find("white")) or 
+		(pieceFrom:find("black") and pieceTo:find("black")) then
 		return 0
 	end
 
-
+	-- DETERMINISTIC MOVING
+	
 	-- PAWNS
 	if pieceFrom:find("pawn_white") then
-		if from_index == to_index then
-			if string.byte(to_list) == string.byte(from_list) - 1 then
-				return 1
-			elseif from_list == 'G' and
-				string.byte(to_list) == string.byte(from_list) - 2 then
-				return 1
-			end
+		if from_index == to_index and
+			inv:get_stack(string.char(string.byte(from_list)-1), from_index):get_name() == "" then
+				if string.byte(to_list) == string.byte(from_list) - 1 then
+					return 1
+				elseif from_list == 'G' and
+					string.byte(to_list) == string.byte(from_list) - 2 then
+					return 1
+				end
 		elseif string.byte(from_list) > string.byte(to_list) and
 			(from_index ~= to_index and pieceTo:find("black")) then
 			return 1
 		end
 	elseif pieceFrom:find("pawn_black") then
-		if from_index == to_index then
-			if string.byte(to_list) == string.byte(from_list) + 1 then
-				return 1
-			elseif from_list == 'B' and
-				string.byte(to_list) == string.byte(from_list) + 2 then
-				return 1
-			end
+		if from_index == to_index and
+			inv:get_stack(string.char(string.byte(from_list)+1), from_index):get_name() == "" then
+				if string.byte(to_list) == string.byte(from_list) + 1 then
+					return 1
+				elseif from_list == 'B' and
+					string.byte(to_list) == string.byte(from_list) + 2 then
+					return 1
+				end
 		elseif string.byte(from_list) < string.byte(to_list) and
 			(from_index ~= to_index and pieceTo:find("white")) then
 			return 1
 		end
-		return 0
 	end
 
 
@@ -150,7 +139,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				return 1
 			end
 		end
-		return 0
 	end
 
 
@@ -167,7 +155,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				return 1
 			end
 		end
-		return 0
 	end
 
 
@@ -180,7 +167,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				return 1
 			end
 		end
-		return 0
 	end
 
 
@@ -199,7 +185,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				return 1
 			end
 		end
-		return 0
 	end
 
 
@@ -216,7 +201,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			string.byte(to_list) == string.byte(from_list) + 1) then
 			return 1
 		end
-		return 0
 	end
 
 	return 0
@@ -230,12 +214,8 @@ function realchess.fields(pos, formname, fields, sender)
 	-- If someone's playing, nobody except the players can reset the game
 	if fields.new and (meta:get_string("playerOne") == pname or
 			meta:get_string("playerTwo") == pname) then
-		print(meta:get_string("playerOne"))
-		print(meta:get_string("playerTwo"))
 		realchess.fs(pos)
 	else
-		print(meta:get_string("playerOne"))
-		print(meta:get_string("playerTwo"))
 		minetest.chat_send_player(pname, "You can't reset the game unless if you're playing it.")
 	end
 end
@@ -257,6 +237,8 @@ minetest.register_node("realchess:chessboard", {
 	drawtype = "nodebox",
 	paramtype = "light",
 	paramtype2 = "facedir",
+	inventory_image = "chessboard_top.png",
+	wield_image = "chessboard_top.png",
 	tiles = {"chessboard_top.png", "chessboard_top.png",
 		"chessboard_sides.png", "chessboard_sides.png",
 		"chessboard_top.png", "chessboard_top.png"},
