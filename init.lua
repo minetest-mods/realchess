@@ -34,15 +34,15 @@ function realchess.fs(pos)
 	meta:set_string("playerTwo", "")
 	meta:set_string("lastMove", "")
 
-	inv:set_list('A', {"realchess:tower_black 1", "realchess:horse_black 1", 
-			"realchess:fool_black 1", "realchess:king_black 1", 
-			"realchess:queen_black 1", "realchess:fool_black 1",
-			"realchess:horse_black 1", "realchess:tower_black 1"})
+	inv:set_list('A', {"realchess:tower_black_1 1", "realchess:horse_black_1 1", 
+			"realchess:fool_black_1 1", "realchess:king_black_1 1", 
+			"realchess:queen_black_1 1", "realchess:fool_black_2 1",
+			"realchess:horse_black_2 1", "realchess:tower_black_2 1"})
 			
-	inv:set_list('H', {"realchess:tower_white 1", "realchess:horse_white 1", 
-			"realchess:fool_white 1", "realchess:queen_white 1", 
-			"realchess:king_white 1", "realchess:fool_white 1",
-			"realchess:horse_white 1", "realchess:tower_white 1"})
+	inv:set_list('H', {"realchess:tower_white_1 1", "realchess:horse_white_1 1", 
+			"realchess:fool_white_1 1", "realchess:queen_white_1 1", 
+			"realchess:king_white_1 1", "realchess:fool_white_2 1",
+			"realchess:horse_white_2 1", "realchess:tower_white_2 1"})
 
 	inv:set_list("C", {})
 	inv:set_list("D", {})
@@ -50,9 +50,9 @@ function realchess.fs(pos)
 	inv:set_list("F", {})
 	
 	local bpawns, wpawns = {}, {}
-	for i = 0, 7 do
-		bpawns[#bpawns+1] = "realchess:pawn_black 1"
-		wpawns[#wpawns+1] = "realchess:pawn_white 1"
+	for i = 1, 8 do
+		bpawns[#bpawns+1] = "realchess:pawn_black_"..i.." 1"
+		wpawns[#wpawns+1] = "realchess:pawn_white_"..i.." 1"
 		inv:set_list('B', bpawns)
 		inv:set_list('G', wpawns)
 	end
@@ -248,20 +248,34 @@ minetest.register_node("realchess:chessboard", {
 	can_dig = realchess.dig,
 	on_construct = realchess.fs,
 	on_receive_fields = realchess.fields,
-	allow_metadata_inventory_move = realchess.move
+	allow_metadata_inventory_move = realchess.move,
+	on_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
+		local meta = minetest.get_meta(pos)
+		local inv = meta:get_inventory()
+		inv:set_stack(from_list, from_index, '')
+	end
 })
 
-local pieces = {"pawn", "tower", "horse", "fool", "queen", "king"}
+local pieces = {
+	{name = "pawn", count = 8},
+	{name = "tower", count = 2},
+	{name = "horse", count = 2},
+	{name = "fool", count = 2},
+	{name = "queen", count = 1},
+	{name = "king", count = 1}
+}
 local colors = {"black", "white"}
 
 for _, p in pairs(pieces) do
 for _, c in pairs(colors) do
-	minetest.register_craftitem("realchess:"..p.."_"..c, {
-		description = c:gsub("^%l", string.upper).." "..p:gsub("^%l", string.upper),
-		inventory_image = p.."_"..c..".png",
+for i = 1, p.count do
+	minetest.register_craftitem("realchess:"..p.name.."_"..c.."_"..i, {
+		description = c:gsub("^%l", string.upper).." "..p.name:gsub("^%l", string.upper),
+		inventory_image = p.name.."_"..c..".png",
 		stack_max = 1,
 		groups = {not_in_creative_inventory=1}
 	})
+end
 end
 end
 
