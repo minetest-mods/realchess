@@ -125,7 +125,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	end
 
 
-	-- TOWERS
+	-- ROOKS
 	if pieceFrom:find("rook") then
 		for i = 1, 7 do
 			if from_index == to_index and (string.byte(to_list) == string.byte(from_list) - i or
@@ -139,14 +139,14 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	end
 
 
-	-- HORSES
-	local horse_dirs = {
+	-- KNIGHTS
+	local knight_dirs = {
 		{-2, -1}, {-2, 1}, {2, 1}, {2, -1}, -- Moves type 1
 		{-1, 2}, {-1, -2}, {1, -2}, {1, 2} -- Moves type 2
 	}
 
 	if pieceFrom:find("knight") then
-		for _, d in pairs(horse_dirs) do
+		for _, d in pairs(knight_dirs) do
 			if string.byte(to_list) == string.byte(from_list) + d[1] and
 				(to_index == from_index + d[2]) then
 				return 1
@@ -155,7 +155,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	end
 
 
-	-- FOOLS
+	-- BISHOPS
 	if pieceFrom:find("bishop") then
 		for i = 1, 7 do
 			if (to_index == from_index + i or to_index == from_index - i) and
@@ -242,6 +242,7 @@ minetest.register_node("realchess:chessboard", {
 	groups = {choppy=3, fammable=3},
 	sounds = default.node_sound_wood_defaults(),
 	node_box = {type = "fixed", fixed = {-0.5, -0.5, -0.5, 0.5, -0.4375, 0.5}},
+	sunlight_propagates = true,
 	can_dig = realchess.dig,
 	on_construct = realchess.fs,
 	on_receive_fields = realchess.fields,
