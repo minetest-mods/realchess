@@ -1,14 +1,11 @@
 --[[ TODO:
 	- Proper black/white ownership by respective player.
 	- Proper turn by turn handling;
-	- Proper piece replacement (ie: if piece A eats piece B, piece B is properly replaced without getting a stack under the cursor);
 	- If a pawn reaches row A or row H -> becomes a queen;
 	- If one of kings is defeat -> the game stops;
 	- Actions recording;
 	- Counter per player.
 --]]
-
-
 
 realchess = {}
 
@@ -34,15 +31,15 @@ function realchess.fs(pos)
 	meta:set_string("playerTwo", "")
 	meta:set_string("lastMove", "")
 
-	inv:set_list('A', {"realchess:tower_black_1 1", "realchess:horse_black_1 1", 
-			"realchess:fool_black_1 1", "realchess:king_black_1 1", 
-			"realchess:queen_black_1 1", "realchess:fool_black_2 1",
-			"realchess:horse_black_2 1", "realchess:tower_black_2 1"})
+	inv:set_list('A', {"realchess:rook_black_1 1", "realchess:knight_black_1 1", 
+			"realchess:bishop_black_1 1", "realchess:king_black_1 1", 
+			"realchess:queen_black_1 1", "realchess:bishop_black_2 1",
+			"realchess:knight_black_2 1", "realchess:rook_black_2 1"})
 			
-	inv:set_list('H', {"realchess:tower_white_1 1", "realchess:horse_white_1 1", 
-			"realchess:fool_white_1 1", "realchess:queen_white_1 1", 
-			"realchess:king_white_1 1", "realchess:fool_white_2 1",
-			"realchess:horse_white_2 1", "realchess:tower_white_2 1"})
+	inv:set_list('H', {"realchess:rook_white_1 1", "realchess:knight_white_1 1", 
+			"realchess:bishop_white_1 1", "realchess:queen_white_1 1", 
+			"realchess:king_white_1 1", "realchess:bishop_white_2 1",
+			"realchess:knight_white_2 1", "realchess:rook_white_2 1"})
 
 	inv:set_list("C", {})
 	inv:set_list("D", {})
@@ -129,7 +126,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 
 
 	-- TOWERS
-	if pieceFrom:find("tower") then
+	if pieceFrom:find("rook") then
 		for i = 1, 7 do
 			if from_index == to_index and (string.byte(to_list) == string.byte(from_list) - i or
 				string.byte(to_list) == string.byte(from_list) + i) then
@@ -148,7 +145,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		{-1, 2}, {-1, -2}, {1, -2}, {1, 2} -- Moves type 2
 	}
 
-	if pieceFrom:find("horse") then
+	if pieceFrom:find("knight") then
 		for _, d in pairs(horse_dirs) do
 			if string.byte(to_list) == string.byte(from_list) + d[1] and
 				(to_index == from_index + d[2]) then
@@ -159,7 +156,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 
 
 	-- FOOLS
-	if pieceFrom:find("fool") then
+	if pieceFrom:find("bishop") then
 		for i = 1, 7 do
 			if (to_index == from_index + i or to_index == from_index - i) and
 				(string.byte(to_list) == string.byte(from_list) - i or
@@ -258,9 +255,9 @@ minetest.register_node("realchess:chessboard", {
 
 local pieces = {
 	{name = "pawn", count = 8},
-	{name = "tower", count = 2},
-	{name = "horse", count = 2},
-	{name = "fool", count = 2},
+	{name = "rook", count = 2},
+	{name = "knight", count = 2},
+	{name = "bishop", count = 2},
 	{name = "queen", count = 1},
 	{name = "king", count = 1}
 }
