@@ -1,4 +1,4 @@
-realchess = {}
+local realchess = {}
 
 local function index_to_xy(index)
 	index = index - 1
@@ -85,7 +85,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	local pieceTo = inv:get_stack(to_list, to_index):get_name()
 	local playerName = player:get_player_name()
 	local lastMove = meta:get_string("lastMove")
-	local thisMove = "" -- will replace lastMove when move is legal
+	local thisMove -- will replace lastMove when move is legal
 	local playerWhite = meta:get_string("playerWhite")
 	local playerBlack = meta:get_string("playerBlack")
 	
@@ -484,6 +484,10 @@ function realchess.on_move(pos, from_list, from_index, to_list, to_index, count,
 	return false
 end
 
+function realchess.take(pos, listname, index, stack, player)
+	return 0
+end
+
 minetest.register_node("realchess:chessboard", {
 	description = "Chess Board",
 	drawtype = "nodebox",
@@ -502,7 +506,8 @@ minetest.register_node("realchess:chessboard", {
 	on_construct = realchess.init,
 	on_receive_fields = realchess.fields,
 	allow_metadata_inventory_move = realchess.move,
-	on_metadata_inventory_move = realchess.on_move
+	on_metadata_inventory_move = realchess.on_move,
+	allow_metadata_inventory_take = realchess.take
 })
 
 local function register_piece(name, count)
