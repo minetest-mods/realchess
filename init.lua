@@ -32,6 +32,7 @@ function realchess.init(pos)
 	meta:set_string("playerWhite", "")
 	meta:set_string("lastMove", "")
 	meta:set_string("lastMoveTime", "")
+	meta:set_string("winner", "")
 	
 	inv:set_list("board", {
 		"realchess:rook_black_1",
@@ -77,12 +78,18 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	if from_list ~= "board" and to_list ~= "board" then
 		return 0
 	end
-
-	local inv = minetest.get_meta(pos):get_inventory()
+	
+	local playerName = player:get_player_name()
 	local meta = minetest.get_meta(pos)
+	
+	if meta:get_string("winner") ~= "" then
+		minetest.chat_send_player(playerName, "This game is over.")
+		return 0
+	end
+
+	local inv = meta:get_inventory()
 	local pieceFrom = inv:get_stack(from_list, from_index):get_name()
 	local pieceTo = inv:get_stack(to_list, to_index):get_name()
-	local playerName = player:get_player_name()
 	local lastMove = meta:get_string("lastMove")
 	local thisMove -- will replace lastMove when move is legal
 	local playerWhite = meta:get_string("playerWhite")
@@ -320,7 +327,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				end
 			end
 		end
-
 	elseif pieceFrom:find("queen") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
@@ -439,6 +445,13 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	meta:set_string("playerBlack", playerBlack)
 	meta:set_string("lastMove", thisMove)
 	meta:set_string("lastMoveTime", minetest.get_gametime())
+	
+	if pieceTo:find("king") then
+		minetest.chat_send_player(playerBlack, playerName .. " won the game.")
+		minetest.chat_send_player(playerWhite, playerName .. " won the game.")
+		meta:set_string("winner", thisMove)
+	end
+	
 	return 1
 end
 	
