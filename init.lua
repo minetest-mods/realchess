@@ -131,23 +131,20 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	
 		if thisMove == "white" then
 			-- white pawns can go up only
-			if from_y - 1 ~= to_y then
-				return 0
-			end
-			
-			-- if x not changed,
-			--   ensure that destination cell is empty
-			-- elseif x changed one unit left or right
-			--   ensure the pawn is killing opponent piece
-			-- else
-			--   move is not legal - abort
-			
-			if from_x == to_x then
-				if pieceTo ~= "" then
+			if from_y - 1 == to_y then
+				if from_x == to_x then
+					if pieceTo ~= "" then
+						return 0
+					end
+				elseif from_x - 1 == to_x or from_x + 1 == to_x then
+					if not pieceTo:find("black") then
+						return 0
+					end
+				else
 					return 0
 				end
-			elseif from_x - 1 == to_x or from_x + 1 == to_x then
-				if not pieceTo:find("black") then
+			elseif from_y - 2 == to_y then
+				if pieceTo ~= "" or from_y < 6 or inv:get_stack(from_list, xy_to_index(from_x, from_y - 1)):get_name() ~= "" then
 					return 0
 				end
 			else
@@ -155,7 +152,19 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			end
 		elseif thisMove == "black" then
 			-- black pawns can go down only
-			if from_y + 1 ~= to_y then
+			if from_y + 1 == to_y then
+				if from_x == to_x then
+					if pieceTo ~= "" then
+						return 0
+					end
+				elseif from_x - 1 == to_x or from_x + 1 == to_x then
+					return 0
+				end
+			elseif from_y + 2 == to_y then
+				if pieceTo ~= "" or from_y > 1 or inv:get_stack(from_list, xy_to_index(from_x, from_y + 1)):get_name() ~= "" then
+					return 0
+				end
+			else
 				return 0
 			end
 			
