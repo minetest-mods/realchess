@@ -345,7 +345,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				-- ensure that no piece disturbs the way
 				
 				for i = 1, dx - 1 do
-					if inv:get_stack(from_list, xy_to_index(from_x, to_y - i)):get_name() ~= "" then
+					if inv:get_stack(from_list, xy_to_index(from_x, from_y - i)):get_name() ~= "" then
 						return 0
 					end
 				end
@@ -374,7 +374,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				-- ensure that no piece disturbs the way
 				
 				for i = 1, dx - 1 do
-					if inv:get_stack(from_list, xy_to_index(from_x + i, to_y - i)):get_name() ~= "" then
+					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y - i)):get_name() ~= "" then
 						return 0
 					end
 				end
@@ -385,7 +385,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				-- ensure that no piece disturbs the way and destination cell does
 				
 				for i = 1, dx - 1 do
-					if inv:get_stack(from_list, xy_to_index(to_x - i, from_y)):get_name() ~= "" then
+					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y)):get_name() ~= "" then
 						return 0
 					end
 				end
@@ -394,7 +394,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				-- ensure that no piece disturbs the way
 				
 				for i = 1, dx - 1 do
-					if inv:get_stack(from_list, xy_to_index(to_x - i, from_y + i)):get_name() ~= "" then
+					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y + i)):get_name() ~= "" then
 						return 0
 					end
 				end
@@ -403,7 +403,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				-- ensure that no piece disturbs the way
 				
 				for i = 1, dx - 1 do
-					if inv:get_stack(from_list, xy_to_index(to_x - i, to_y - i)):get_name() ~= "" then
+					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y - i)):get_name() ~= "" then
 						return 0
 					end
 				end
