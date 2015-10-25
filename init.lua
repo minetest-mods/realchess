@@ -1,6 +1,4 @@
 --[[ TODO:
-	- Proper black/white ownership by respective player.
-	- Proper turn by turn handling;
 	- If a pawn reaches row A or row H -> becomes a queen;
 	- If one of kings is defeat -> the game stops;
 	- Actions recording;
@@ -9,7 +7,7 @@
 
 realchess = {}
 
-function realchess.fs(pos)
+function realchess.init(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
 	local slots = "listcolors[#00000000;#00000000;#00000000;#30434C;#FFF]"
@@ -30,6 +28,7 @@ function realchess.fs(pos)
 	meta:set_string("playerOne", "")
 	meta:set_string("playerTwo", "")
 	meta:set_string("lastMove", "")
+	meta:set_string("lastMoveTime", "")
 
 	inv:set_list('A', {"realchess:rook_black_1 1", "realchess:knight_black_1 1", 
 			"realchess:bishop_black_1 1", "realchess:king_black_1 1", 
@@ -60,32 +59,40 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	local meta = minetest.get_meta(pos)
 	local pieceFrom = inv:get_stack(from_list, from_index):get_name()
 	local pieceTo = inv:get_stack(to_list, to_index):get_name()
-	local pname = player:get_player_name()
-
-	--print("Piece From: "..pieceFrom.." | from_list: "..from_list.." | from_index: "..from_index.." | Converted 'from_list':"..string.byte(from_list))
-	--print("Piece To: "..pieceTo.." | to_list: "..to_list.." | to_index: "..to_index.." | Converted 'to_list':"..string.byte(to_list))
-
+	local playerName = player:get_player_name()
+	local lastMove = meta:get_string("lastMove")
+	local playerWhite = meta:get_string("playerWhite")
+	local playerBlack = meta:get_string("playerBlack")
 	
-	--[[ Bugginess
-	-- Turn by turn
-	if pieceFrom:find("white") and (meta:get_string("lastMove") == "" or
-			meta:get_string("lastMove") == "black") then
-		meta:set_string("lastMove", "white")
-		meta:set_string("playerOne", pname) -- it's shit
-		return 1
-	elseif pieceFrom:find("white") and meta:get_string("lastMove") == "white" then
-		minetest.chat_send_player(pname, "It's not your turn, wait your opponent to play.")
-		return 0
-	elseif pieceFrom:find("black") and (meta:get_string("lastMove") == "" or
-			meta:get_string("lastMove") == "white") then
-		meta:set_string("lastMove", "black")
-		meta:set_string("playerTwo", pname) -- it's shit
-		return 1
-	elseif pieceFrom:find("black") and meta:get_string("lastMove") == "black" then
-		minetest.chat_send_player(pname, "It's not your turn, wait your opponent to play.")
-		return 0
+	if pieceFrom:find("white") then
+		if playerWhite == "" then
+			meta:set_string("playerWhite", playerName)
+		elseif playerWhite ~= "" and playerWhite ~= playerName then
+			minetest.chat_send_player(playerName, "Someone else plays white pieces.")
+			return 0
+		end
+		if lastMove ~= "white" then
+			meta:set_string("lastMove", "white")
+			meta:set_string("lastMoveTime", minetest.get_gametime())
+		elseif lastMove == "white" then
+			minetest.chat_send_player(playerName, "It's not your turn, wait for your opponent to play.")
+			return 0
+		end
+	elseif pieceFrom:find("black") then
+		if playerBlack == "" then
+			meta:set_string("playerBlack", playerName)
+		elseif playerBlack ~= "" and playerBlack ~= playerName then
+			minetest.chat_send_player(playerName, "Someone else plays black pieces.")
+			return 0
+		end
+		if lastMove ~= "black"  then
+			meta:set_string("lastMove", "black")
+			meta:set_string("lastMoveTime", minetest.get_gametime())
+		elseif lastMove == "black" then
+			minetest.chat_send_player(playerName, "It's not your turn, wait for your opponent to play.")
+			return 0
+		end
 	end
-	-- ]]
 
 	-- Don't replace pieces of same color
 	if (pieceFrom:find("white") and pieceTo:find("white")) or 
@@ -204,28 +211,37 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 end
 	
 function realchess.fields(pos, formname, fields, sender)
-	local pname = sender:get_player_name()
+	local playerName = sender:get_player_name()
 	local meta = minetest.get_meta(pos)
 
 	if fields.quit then return end
+
 	-- If someone's playing, nobody except the players can reset the game
-	if fields.new and (meta:get_string("playerOne") == pname or
-			meta:get_string("playerTwo") == pname) then
-		realchess.fs(pos)
+	if fields.new and (meta:get_string("playerWhite") == playerName or
+			meta:get_string("playerBlack") == playerName) then
+		realchess.init(pos)
+	elseif fields.new and meta:get_string("lastMoveTime") ~= "" and
+			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime") + 250) and
+			(meta:get_string("playerWhite") ~= playerName or
+			meta:get_string("playerBlack") ~= playerName) then
+		realchess.init(pos)
 	else
-		minetest.chat_send_player(pname, "You can't reset the game unless if you're playing it.")
+		minetest.chat_send_player(playerName, "You can't reset the chessboard, a game has been started.\nIf you weren't playing it, try again after a while.")
 	end
 end
 
 function realchess.dig(pos, player)
 	local meta = minetest.get_meta(pos)
-	local pname = player:get_player_name()
+	local playerName = player:get_player_name()
 
-	-- If someone's playing, the chess can't be dug
-	if meta:get_string("playerOne") ~= "" or meta:get_string("playerTwo") ~= "" then
-		minetest.chat_send_player(pname, "You can't dug the chess, a game has been started.")
+	-- The chess can't be dug while playing unless if nobody has played since 500s
+	if (meta:get_string("playerWhite") ~= "" or meta:get_string("playerBlack") ~= "") and
+			meta:get_string("lastMoveTime") ~= "" and
+			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime") + 250) then
+		minetest.chat_send_player(playerName, "You can't dug the chessboard, a game has been started.\nIf you weren't playing it, try again after a while.")
 		return false
 	end
+	
 	return true
 end
 
@@ -244,12 +260,11 @@ minetest.register_node("realchess:chessboard", {
 	node_box = {type = "fixed", fixed = {-0.5, -0.5, -0.5, 0.5, -0.4375, 0.5}},
 	sunlight_propagates = true,
 	can_dig = realchess.dig,
-	on_construct = realchess.fs,
+	on_construct = realchess.init,
 	on_receive_fields = realchess.fields,
 	allow_metadata_inventory_move = realchess.move,
 	on_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
-		local meta = minetest.get_meta(pos)
-		local inv = meta:get_inventory()
+		local inv = minetest.get_meta(pos):get_inventory()
 		inv:set_stack(from_list, from_index, '')
 	end
 })
