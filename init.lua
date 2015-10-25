@@ -23,7 +23,7 @@ function realchess.init(pos)
 		"size[8,8.6;]"..
 		"bgcolor[#080808BB;true]"..
 		"background[0,0;8,8;chess_bg.png]"..
-		"button[3.2,7.6;2,2;new;New game]"..
+		"button[3.1,7.8;2,2;new;New game]"..
 		"list[context;board;0,0;8,8;]"..
 		slots)
 		
@@ -204,7 +204,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y < to_y then
 				-- moving down
 				-- ensure that no piece disturbs the way
-				
 				for i = from_y + 1, to_y - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x, i)):get_name() ~= "" then
 						return 0
@@ -213,7 +212,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- mocing up
 				-- ensure that no piece disturbs the way
-				
 				for i = to_y + 1, from_y - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x, i)):get_name() ~= "" then
 						return 0
@@ -225,7 +223,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_x < to_x then
 				-- mocing right
 				-- ensure that no piece disturbs the way
-				
 				for i = from_x + 1, to_x - 1 do
 					if inv:get_stack(from_list, xy_to_index(i, from_y)):get_name() ~= "" then
 						return 0
@@ -234,7 +231,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- mocing left
 				-- ensure that no piece disturbs the way
-				
 				for i = to_x + 1, from_x - 1 do
 					if inv:get_stack(from_list, xy_to_index(i, from_y)):get_name() ~= "" then
 						return 0
@@ -294,7 +290,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y < to_y then
 				-- moving right-down
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y + i)):get_name() ~= "" then
 						return 0
@@ -303,7 +298,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- moving right-up
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y - i)):get_name() ~= "" then
 						return 0
@@ -314,7 +308,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y < to_y then
 				-- moving left-down
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y + i)):get_name() ~= "" then
 						return 0
@@ -323,7 +316,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- moving left-up
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y - i)):get_name() ~= "" then
 						return 0
@@ -331,6 +323,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				end
 			end
 		end
+
 	elseif pieceFrom:find("queen") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
@@ -352,7 +345,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y < to_y then
 				-- goes down
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x, from_y + i)):get_name() ~= "" then
 						return 0
@@ -361,7 +353,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- goes up
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x, from_y - i)):get_name() ~= "" then
 						return 0
@@ -372,7 +363,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y == to_y then
 				-- goes right
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y)):get_name() ~= "" then
 						return 0
@@ -381,7 +371,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			elseif from_y < to_y then
 				-- goes right-down
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y + i)):get_name() ~= "" then
 						return 0
@@ -390,7 +379,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- goes right-up
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y - i)):get_name() ~= "" then
 						return 0
@@ -401,7 +389,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			if from_y == to_y then
 				-- goes left
 				-- ensure that no piece disturbs the way and destination cell does
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y)):get_name() ~= "" then
 						return 0
@@ -410,7 +397,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			elseif from_y < to_y then
 				-- goes left-down
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y + i)):get_name() ~= "" then
 						return 0
@@ -419,7 +405,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				-- goes left-up
 				-- ensure that no piece disturbs the way
-				
 				for i = 1, dx - 1 do
 					if inv:get_stack(from_list, xy_to_index(from_x - i, from_y - i)):get_name() ~= "" then
 						return 0
@@ -450,6 +435,12 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	meta:set_string("lastMove", thisMove)
 	meta:set_string("lastMoveTime", minetest.get_gametime())
 	
+	if meta:get_string("lastMove") == "black" then
+		minetest.chat_send_player(playerWhite, playerName .. " has moved the " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+	elseif meta:get_string("lastMove") == "white" then
+		minetest.chat_send_player(playerBlack, playerName .. " has moved the " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+	end
+	
 	if pieceTo:find("king") then
 		minetest.chat_send_player(playerBlack, playerName .. " won the game.")
 		minetest.chat_send_player(playerWhite, playerName .. " won the game.")
@@ -470,7 +461,7 @@ function realchess.fields(pos, formname, fields, sender)
 			meta:get_string("playerBlack") == playerName) then
 		realchess.init(pos)
 	elseif fields.new and meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime") + 250) and
+			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime") + 200) and
 			(meta:get_string("playerWhite") ~= playerName or
 			meta:get_string("playerBlack") ~= playerName) then
 		realchess.init(pos)
@@ -486,7 +477,7 @@ function realchess.dig(pos, player)
 	-- The chess can't be dug while playing unless if nobody has played during a while
 	if (meta:get_string("playerWhite") ~= "" or meta:get_string("playerBlack") ~= "") and
 			meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime") + 250) then
+			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime") + 200) then
 		minetest.chat_send_player(playerName, "You can't dug the chessboard, a game has been started.\nIf you weren't playing it, try again after a while.")
 		return false
 	end
