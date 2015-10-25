@@ -15,8 +15,7 @@ function realchess.init(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
 	local slots = "listcolors[#00000000;#00000000;#00000000;#30434C;#FFF]"
-	
-	local formspec = ""
+	local formspec
 	
 	inv:set_size("board", 64)
 	
@@ -127,8 +126,6 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	local to_x, to_y = index_to_xy(to_index)
 	
 	if pieceFrom:find("pawn") then
-		-- TODO: pawns can run two cells instead of one in some specific cases.
-	
 		if thisMove == "white" then
 			-- white pawns can go up only
 			if from_y - 1 == to_y then
@@ -189,6 +186,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		else
 			return 0
 		end
+
 	elseif pieceFrom:find("rook") then
 		if from_x == to_x then
 			-- moving vertically
@@ -236,7 +234,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			-- attempt to move arbitrarily -> abort
 			return 0
 		end
-		
+
 	elseif pieceFrom:find("knight") then
 		-- get relative pos
 		local dx = from_x - to_x
@@ -322,6 +320,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				end
 			end
 		end
+
 	elseif pieceFrom:find("queen") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
@@ -449,7 +448,7 @@ function realchess.fields(pos, formname, fields, sender)
 
 	if fields.quit then return end
 
-	-- If someone's playing, nobody except the players can reset the game
+	-- The chess can't be reset while playing unless if nobody has played during a while
 	if fields.new and (meta:get_string("playerWhite") == playerName or
 			meta:get_string("playerBlack") == playerName) then
 		realchess.init(pos)
@@ -546,3 +545,4 @@ minetest.register_craft({
 		{"stairs:slab_wood", "stairs:slab_wood", "stairs:slab_wood"}
 	} 
 })
+
