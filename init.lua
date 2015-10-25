@@ -162,6 +162,10 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 						return 0
 					end
 				elseif from_x - 1 == to_x or from_x + 1 == to_x then
+					if not pieceTo:find("white") then
+						return 0
+					end
+				else
 					return 0
 				end
 			elseif from_y + 2 == to_y then
