@@ -1,213 +1,437 @@
---[[ TODO:
-	- If a pawn reaches row A or row H -> becomes a queen;
-	- If one of kings is defeat -> the game stops;
-	- Actions recording;
-	- Counter per player.
---]]
-
 realchess = {}
+
+local function index_to_xy(index)
+	index = index - 1
+	local x = index % 8
+	local y = (index - x) / 8
+	return x, y
+end
+
+local function xy_to_index(x, y)
+	return x + y * 8 + 1
+end
 
 function realchess.init(pos)
 	local meta = minetest.get_meta(pos)
 	local inv = meta:get_inventory()
 	local slots = "listcolors[#00000000;#00000000;#00000000;#30434C;#FFF]"
 	
-	local rows = {
-		{'A', 0}, {'B', 1}, {'C', 2}, {'D', 3}, {'E', 4}, {'F', 5}, {'G', 6}, {'H', 7}
-	}
 	local formspec = ""
-	for _, n in pairs(rows) do
-		local letter = n[1]
-		local number = n[2]
-		inv:set_size(letter, 8)
-		formspec = formspec.."list[context;"..letter..";0,"..number..";8,1;false]"
-	end
 	
-	meta:set_string("formspec", "size[8,8.6;]bgcolor[#080808BB;true]background[0,0;8,8;chess_bg.png]button[3.2,7.6;2,2;new;New game]"..formspec..slots)
+	inv:set_size("board", 64)
+	
+	meta:set_string("formspec",
+		"size[8,8.6;]"..
+		"bgcolor[#080808BB;true]"..
+		"background[0,0;8,8;chess_bg.png]"..
+		"button[3.2,7.6;2,2;new;New game]"..
+		"list[context;board;0,0;8,8;]"..
+		slots)
+		
 	meta:set_string("infotext", "Chess Board")
-	meta:set_string("playerOne", "")
-	meta:set_string("playerTwo", "")
+	meta:set_string("playerBlack", "")
+	meta:set_string("playerWhite", "")
 	meta:set_string("lastMove", "")
 	meta:set_string("lastMoveTime", "")
-
-	inv:set_list('A', {"realchess:rook_black_1 1", "realchess:knight_black_1 1", 
-			"realchess:bishop_black_1 1", "realchess:king_black_1 1", 
-			"realchess:queen_black_1 1", "realchess:bishop_black_2 1",
-			"realchess:knight_black_2 1", "realchess:rook_black_2 1"})
-			
-	inv:set_list('H', {"realchess:rook_white_1 1", "realchess:knight_white_1 1", 
-			"realchess:bishop_white_1 1", "realchess:queen_white_1 1", 
-			"realchess:king_white_1 1", "realchess:bishop_white_2 1",
-			"realchess:knight_white_2 1", "realchess:rook_white_2 1"})
-
-	inv:set_list("C", {})
-	inv:set_list("D", {})
-	inv:set_list("E", {})
-	inv:set_list("F", {})
 	
-	local bpawns, wpawns = {}, {}
-	for i = 1, 8 do
-		bpawns[#bpawns+1] = "realchess:pawn_black_"..i.." 1"
-		wpawns[#wpawns+1] = "realchess:pawn_white_"..i.." 1"
-		inv:set_list('B', bpawns)
-		inv:set_list('G', wpawns)
-	end
+	inv:set_list("board", {
+		"realchess:rook_black_1",
+		"realchess:knight_black_1",
+		"realchess:bishop_black_1",
+		"realchess:king_black",
+		"realchess:queen_black",
+		"realchess:bishop_black_2",
+		"realchess:knight_black_2",
+		"realchess:rook_black_2",
+		"realchess:pawn_black_1",
+		"realchess:pawn_black_2",
+		"realchess:pawn_black_3",
+		"realchess:pawn_black_4",
+		"realchess:pawn_black_5",
+		"realchess:pawn_black_6",
+		"realchess:pawn_black_7",
+		"realchess:pawn_black_8",		
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"realchess:pawn_white_1",
+		"realchess:pawn_white_2",
+		"realchess:pawn_white_3",
+		"realchess:pawn_white_4",
+		"realchess:pawn_white_5",
+		"realchess:pawn_white_6",
+		"realchess:pawn_white_7",
+		"realchess:pawn_white_8",
+		"realchess:rook_white_1",
+		"realchess:knight_white_1",
+		"realchess:bishop_white_1",
+		"realchess:queen_white",
+		"realchess:king_white",
+		"realchess:bishop_white_2",
+		"realchess:knight_white_2",
+		"realchess:rook_white_2",
+	})
 end
 
 function realchess.move(pos, from_list, from_index, to_list, to_index, count, player)
+	if from_list ~= "board" and to_list ~= "board" then
+		return 0
+	end
+
 	local inv = minetest.get_meta(pos):get_inventory()
 	local meta = minetest.get_meta(pos)
 	local pieceFrom = inv:get_stack(from_list, from_index):get_name()
 	local pieceTo = inv:get_stack(to_list, to_index):get_name()
 	local playerName = player:get_player_name()
 	local lastMove = meta:get_string("lastMove")
+	local thisMove = "" -- will replace lastMove when move is legal
 	local playerWhite = meta:get_string("playerWhite")
 	local playerBlack = meta:get_string("playerBlack")
 	
 	if pieceFrom:find("white") then
-		if playerWhite == "" then
-			meta:set_string("playerWhite", playerName)
-		elseif playerWhite ~= "" and playerWhite ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays white pieces.")
+		if playerWhite ~= "" and playerWhite ~= playerName then
+			minetest.chat_send_player(playerName, "Someone else plays white pieces")
 			return 0
-		end
-		if lastMove ~= "white" then
-			meta:set_string("lastMove", "white")
-			meta:set_string("lastMoveTime", minetest.get_gametime())
-		elseif lastMove == "white" then
+		end		
+		if lastMove ~= "" and lastMove ~= "black" then
 			minetest.chat_send_player(playerName, "It's not your turn, wait for your opponent to play.")
 			return 0
 		end
+		if pieceTo:find("white") then
+			-- Don't replace pieces of same color
+			return 0
+		end
+		playerWhite = playerName
+		thisMove = "white"
 	elseif pieceFrom:find("black") then
-		if playerBlack == "" then
-			meta:set_string("playerBlack", playerName)
-		elseif playerBlack ~= "" and playerBlack ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays black pieces.")
+		if playerBlack ~= "" and playerBlack ~= playerName then
+			minetest.chat_send_player(playerName, "Someone else plays black pieces")
 			return 0
 		end
-		if lastMove ~= "black"  then
-			meta:set_string("lastMove", "black")
-			meta:set_string("lastMoveTime", minetest.get_gametime())
-		elseif lastMove == "black" then
+		if lastMove ~= "" and lastMove ~= "white" then
 			minetest.chat_send_player(playerName, "It's not your turn, wait for your opponent to play.")
 			return 0
 		end
+		if pieceTo:find("black") then
+			-- Don't replace pieces of same color
+			return 0
+		end
+		playerBlack = playerName
+		thisMove = "black"
 	end
-
-	-- Don't replace pieces of same color
-	if (pieceFrom:find("white") and pieceTo:find("white")) or 
-		(pieceFrom:find("black") and pieceTo:find("black")) then
-		return 0
-	end
-
+	
 	-- DETERMINISTIC MOVING
 	
-	-- PAWNS
-	if pieceFrom:find("pawn_white") then
-		if from_index == to_index and
-			inv:get_stack(string.char(string.byte(from_list)-1), from_index):get_name() == "" then
-				if string.byte(to_list) == string.byte(from_list) - 1 then
-					return 1
-				elseif from_list == 'G' and
-					string.byte(to_list) == string.byte(from_list) - 2 then
-					return 1
+	local from_x, from_y = index_to_xy(from_index)
+	local to_x, to_y = index_to_xy(to_index)
+	
+	if pieceFrom:find("pawn") then
+		-- TODO: pawns can run two cells instead of one in some specific cases.
+	
+		if thisMove == "white" then
+			-- white pawns can go up only
+			if from_y - 1 ~= to_y then
+				return 0
+			end
+			
+			-- if x not changed,
+			--   ensure that destination cell is empty
+			-- elseif x changed one unit left or right
+			--   ensure the pawn is killing opponent piece
+			-- else
+			--   move is not legal - abort
+			
+			if from_x == to_x then
+				if pieceTo ~= "" then
+					return 0
 				end
-		elseif string.byte(from_list) > string.byte(to_list) and
-			(from_index ~= to_index and pieceTo:find("black")) then
-			return 1
-		end
-	elseif pieceFrom:find("pawn_black") then
-		if from_index == to_index and
-			inv:get_stack(string.char(string.byte(from_list)+1), from_index):get_name() == "" then
-				if string.byte(to_list) == string.byte(from_list) + 1 then
-					return 1
-				elseif from_list == 'B' and
-					string.byte(to_list) == string.byte(from_list) + 2 then
-					return 1
+			elseif from_x - 1 == to_x or from_x + 1 == to_x then
+				if not pieceTo:find("black") then
+					return 0
 				end
-		elseif string.byte(from_list) < string.byte(to_list) and
-			(from_index ~= to_index and pieceTo:find("white")) then
-			return 1
+			else
+				return 0
+			end
+		elseif thisMove == "black" then
+			-- black pawns can go down only
+			if from_y + 1 ~= to_y then
+				return 0
+			end
+			
+			-- if x not changed,
+			--   ensure that destination cell is empty
+			-- elseif x changed one unit left or right
+			--   ensure the pawn is killing opponent piece
+			-- else
+			--   move is not legal - abort
+			
+			if from_x == to_x then
+				if pieceTo ~= "" then
+					return 0
+				end
+			elseif from_x - 1 == to_x or from_x + 1 == to_x then
+				if not pieceTo:find("white") then
+					return 0
+				end
+			else
+				return 0
+			end
+		else
+			return 0
 		end
-	end
+	elseif pieceFrom:find("rook") then
+		if from_x == to_x then
+			-- moving vertically
+			if from_y < to_y then
+				-- moving down
+				-- ensure that no piece disturbs the way
+				
+				for i = from_y + 1, to_y - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x, i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- mocing up
+				-- ensure that no piece disturbs the way
+				
+				for i = to_y + 1, from_y - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x, i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end
+		elseif from_y == to_y then
+			-- mocing horizontally
+			if from_x < to_x then
+				-- mocing right
+				-- ensure that no piece disturbs the way
+				
+				for i = from_x + 1, to_x - 1 do
+					if inv:get_stack(from_list, xy_to_index(i, from_y)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- mocing left
+				-- ensure that no piece disturbs the way
+				
+				for i = to_x + 1, from_x - 1 do
+					if inv:get_stack(from_list, xy_to_index(i, from_y)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end
+		else
+			-- attempt to move arbitrarily -> abort
+			return 0
+		end
+		
+	elseif pieceFrom:find("knight") then
+		-- get relative pos
+		local dx = from_x - to_x
+		local dy = from_y - to_y
+		
+		-- get absolute values
+		if dx < 0 then
+			dx = -dx
+		end
+		if dy < 0 then
+			dy = -dy
+		end
+		
+		-- sort x and y
+		if dx > dy then
+			dx, dy = dy, dx
+		end
+		
+		-- ensure that dx == 1 and dy == 2
+		if dx ~= 1 or dy ~= 2 then
+			return 0
+		end
+		
+		-- just ensure that destination cell does not contain friend piece
+		-- ^ it was done already thus everything ok
 
-
-	-- ROOKS
-	if pieceFrom:find("rook") then
-		for i = 1, 7 do
-			if from_index == to_index and (string.byte(to_list) == string.byte(from_list) - i or
-				string.byte(to_list) == string.byte(from_list) + i) then
-				return 1
-			elseif string.byte(to_list) == string.byte(from_list) and
-				from_index ~= to_index then
-				return 1
+	elseif pieceFrom:find("bishop") then
+		-- get relative pos
+		local dx = from_x - to_x
+		local dy = from_y - to_y
+		
+		-- get absolute values
+		if dx < 0 then
+			dx = -dx
+		end
+		if dy < 0 then
+			dy = -dy
+		end
+		
+		-- ensure dx and dy are equal
+		if dx ~= dy then
+			return 0
+		end
+		
+		if from_x < to_x then
+			if from_y < to_y then
+				-- moving right-down
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y + i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- moving right-up
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x + i, to_y - i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end
+		else
+			if from_y < to_y then
+				-- moving left-down
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(to_x - i, from_y + i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- moving left-up
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(to_x - i, to_y - i)):get_name() ~= "" then
+						return 0
+					end
+				end
 			end
 		end
-	end
-
-
-	-- KNIGHTS
-	local knight_dirs = {
-		{-2, -1}, {-2, 1}, {2, 1}, {2, -1}, -- Moves type 1
-		{-1, 2}, {-1, -2}, {1, -2}, {1, 2} -- Moves type 2
-	}
-
-	if pieceFrom:find("knight") then
-		for _, d in pairs(knight_dirs) do
-			if string.byte(to_list) == string.byte(from_list) + d[1] and
-				(to_index == from_index + d[2]) then
-				return 1
-			end
+	elseif pieceFrom:find("queen") then
+		local dx = from_x - to_x
+		local dy = from_y - to_y
+		
+		-- get absolute values
+		if dx < 0 then
+			dx = -dx
+		end
+		if dy < 0 then
+			dy = -dy
+		end
+		
+		-- ensure valid relative move
+		if dx ~= 0 and dy ~= 0 and dx ~= dy then
+			return 0
+		end
+		
+		if from_x == to_x then
+			if from_y < to_y then
+				-- goes down
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x, from_y + i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- goes up
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x, to_y - i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end		
+		elseif from_x < to_x then
+			if from_y == to_y then
+				-- goes right
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y)):get_name() ~= "" then
+						return 0
+					end
+				end
+			elseif from_y < to_y then
+				-- goes right-down
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x + i, from_y + i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- goes right-up
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(from_x + i, to_y - i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end				
+		else
+			if from_y == to_y then
+				-- goes left
+				-- ensure that no piece disturbs the way and destination cell does
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(to_x - i, from_y)):get_name() ~= "" then
+						return 0
+					end
+				end
+			elseif from_y < to_y then
+				-- goes left-down
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(to_x - i, from_y + i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			else
+				-- goes left-up
+				-- ensure that no piece disturbs the way
+				
+				for i = 1, dx - 1 do
+					if inv:get_stack(from_list, xy_to_index(to_x - i, to_y - i)):get_name() ~= "" then
+						return 0
+					end
+				end
+			end		
+		end
+	
+	elseif pieceFrom:find("king") then
+		local dx = from_x - to_x
+		local dy = from_y - to_y
+		
+		-- get absolute values
+		if dx < 0 then
+			dx = -dx
+		end
+		if dy < 0 then
+			dy = -dy
+		end
+		
+		if dx > 1 or dy > 1 then
+			return 0
 		end
 	end
-
-
-	-- BISHOPS
-	if pieceFrom:find("bishop") then
-		for i = 1, 7 do
-			if (to_index == from_index + i or to_index == from_index - i) and
-				(string.byte(to_list) == string.byte(from_list) - i or
-				string.byte(to_list) == string.byte(from_list) + i) then
-				return 1
-			end
-		end
-	end
-
-
-	-- QUEENS
-	if pieceFrom:find("queen") then
-		for i = 1, 7 do
-			if from_index == to_index and (string.byte(to_list) == string.byte(from_list) - i or
-				string.byte(to_list) == string.byte(from_list) + i) then
-				return 1
-			elseif string.byte(to_list) == string.byte(from_list) and
-				from_index ~= to_index then
-				return 1
-			elseif (to_index == from_index + i or to_index == from_index - i) and
-				(string.byte(to_list) == string.byte(from_list) - i or
-				string.byte(to_list) == string.byte(from_list) + i) then
-				return 1
-			end
-		end
-	end
-
-
-	-- KINGS
-	if pieceFrom:find("king") then
-		if from_index == to_index and (string.byte(to_list) == string.byte(from_list) - 1 or
-			string.byte(to_list) == string.byte(from_list) + 1) then
-			return 1
-		elseif string.byte(to_list) == string.byte(from_list) and
-			from_index ~= to_index then
-			return 1
-		elseif (to_index == from_index + 1 or to_index == from_index - 1) and
-			(string.byte(to_list) == string.byte(from_list) - 1 or
-			string.byte(to_list) == string.byte(from_list) + 1) then
-			return 1
-		end
-	end
-
-	return 0
+	
+	meta:set_string("playerWhite", playerWhite)
+	meta:set_string("playerBlack", playerBlack)
+	meta:set_string("lastMove", thisMove)
+	meta:set_string("lastMoveTime", minetest.get_gametime())
+	return 1
 end
 	
 function realchess.fields(pos, formname, fields, sender)
@@ -234,7 +458,7 @@ function realchess.dig(pos, player)
 	local meta = minetest.get_meta(pos)
 	local playerName = player:get_player_name()
 
-	-- The chess can't be dug while playing unless if nobody has played since 500s
+	-- The chess can't be dug while playing unless if nobody has played during a while
 	if (meta:get_string("playerWhite") ~= "" or meta:get_string("playerBlack") ~= "") and
 			meta:get_string("lastMoveTime") ~= "" and
 			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime") + 250) then
@@ -243,6 +467,12 @@ function realchess.dig(pos, player)
 	end
 	
 	return true
+end
+
+function realchess.on_move(pos, from_list, from_index, to_list, to_index, count, player)
+	local inv = minetest.get_meta(pos):get_inventory()
+	inv:set_stack(from_list, from_index, '')
+	return false
 end
 
 minetest.register_node("realchess:chessboard", {
@@ -255,7 +485,7 @@ minetest.register_node("realchess:chessboard", {
 	tiles = {"chessboard_top.png", "chessboard_top.png",
 		"chessboard_sides.png", "chessboard_sides.png",
 		"chessboard_top.png", "chessboard_top.png"},
-	groups = {choppy=3, fammable=3},
+	groups = {choppy=3, flammable=3},
 	sounds = default.node_sound_wood_defaults(),
 	node_box = {type = "fixed", fixed = {-0.5, -0.5, -0.5, 0.5, -0.4375, 0.5}},
 	sunlight_propagates = true,
@@ -263,34 +493,37 @@ minetest.register_node("realchess:chessboard", {
 	on_construct = realchess.init,
 	on_receive_fields = realchess.fields,
 	allow_metadata_inventory_move = realchess.move,
-	on_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
-		local inv = minetest.get_meta(pos):get_inventory()
-		inv:set_stack(from_list, from_index, '')
-	end
+	on_metadata_inventory_move = realchess.on_move
 })
 
-local pieces = {
-	{name = "pawn", count = 8},
-	{name = "rook", count = 2},
-	{name = "knight", count = 2},
-	{name = "bishop", count = 2},
-	{name = "queen", count = 1},
-	{name = "king", count = 1}
-}
-local colors = {"black", "white"}
+local function register_piece(name, count)
+	for _, color in pairs({"black", "white"}) do
+	if not count then
+		minetest.register_craftitem("realchess:"..name.."_"..color, {
+			description = color:gsub("^%l", string.upper).." "..name:gsub("^%l", string.upper),
+			inventory_image = name.."_"..color..".png",
+			stack_max = 1,
+			groups = {not_in_creative_inventory=1},
+		})
+	else
+		for i = 1, count do
+			minetest.register_craftitem("realchess:"..name.."_"..color.."_"..i, {
+				description = color:gsub("^%l", string.upper).." "..name:gsub("^%l", string.upper),
+				inventory_image = name.."_"..color..".png",
+				stack_max = 1,
+				groups = {not_in_creative_inventory=1},
+			})
+		end
+	end
+	end
+end
 
-for _, p in pairs(pieces) do
-for _, c in pairs(colors) do
-for i = 1, p.count do
-	minetest.register_craftitem("realchess:"..p.name.."_"..c.."_"..i, {
-		description = c:gsub("^%l", string.upper).." "..p.name:gsub("^%l", string.upper),
-		inventory_image = p.name.."_"..c..".png",
-		stack_max = 1,
-		groups = {not_in_creative_inventory=1}
-	})
-end
-end
-end
+register_piece("pawn", 8)
+register_piece("rook", 2)
+register_piece("knight", 2)
+register_piece("bishop", 2)
+register_piece("queen")
+register_piece("king")
 
 minetest.register_craft({ 
 	output = "realchess:chessboard",
@@ -299,4 +532,3 @@ minetest.register_craft({
 		{"stairs:slab_wood", "stairs:slab_wood", "stairs:slab_wood"}
 	} 
 })
-
