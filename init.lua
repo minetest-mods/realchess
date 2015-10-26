@@ -97,7 +97,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	
 	if pieceFrom:find("white") then
 		if playerWhite ~= "" and playerWhite ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays white pieces")
+			minetest.chat_send_player(playerName, "Someone else plays white pieces !")
 			return 0
 		end		
 		if lastMove ~= "" and lastMove ~= "black" then
@@ -112,7 +112,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		thisMove = "white"
 	elseif pieceFrom:find("black") then
 		if playerBlack ~= "" and playerBlack ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays black pieces")
+			minetest.chat_send_player(playerName, "Someone else plays black pieces !")
 			return 0
 		end
 		if lastMove ~= "" and lastMove ~= "white" then
@@ -139,6 +139,8 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				if from_x == to_x then
 					if pieceTo ~= "" then
 						return 0
+					elseif to_index >= 1 and to_index <= 8 then
+						inv:set_stack(from_list, from_index, "realchess:queen_white")
 					end
 				elseif from_x - 1 == to_x or from_x + 1 == to_x then
 					if not pieceTo:find("black") then
@@ -160,6 +162,8 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				if from_x == to_x then
 					if pieceTo ~= "" then
 						return 0
+					elseif to_index >= 56 and to_index <= 64 then
+						inv:set_stack(from_list, from_index, "realchess:queen_black")
 					end
 				elseif from_x - 1 == to_x or from_x + 1 == to_x then
 					if not pieceTo:find("white") then
