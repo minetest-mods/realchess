@@ -16,9 +16,9 @@ function realchess.init(pos)
 	local inv = meta:get_inventory()
 	local slots = "listcolors[#00000000;#00000000;#00000000;#30434C;#FFF]"
 	local formspec
-	
+
 	inv:set_size("board", 64)
-	
+
 	meta:set_string("formspec",
 		"size[8,8.6;]"..
 		"bgcolor[#080808BB;true]"..
@@ -26,14 +26,14 @@ function realchess.init(pos)
 		"button[3.1,7.8;2,2;new;New game]"..
 		"list[context;board;0,0;8,8;]"..
 		slots)
-		
+	
 	meta:set_string("infotext", "Chess Board")
 	meta:set_string("playerBlack", "")
 	meta:set_string("playerWhite", "")
 	meta:set_string("lastMove", "")
 	meta:set_string("lastMoveTime", "")
 	meta:set_string("winner", "")
-	
+
 	inv:set_list("board", {
 		"realchess:rook_black_1",
 		"realchess:knight_black_1",
@@ -70,7 +70,7 @@ function realchess.init(pos)
 		"realchess:king_white",
 		"realchess:bishop_white_2",
 		"realchess:knight_white_2",
-		"realchess:rook_white_2",
+		"realchess:rook_white_2"
 	})
 end
 
@@ -78,10 +78,10 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	if from_list ~= "board" and to_list ~= "board" then
 		return 0
 	end
-	
+
 	local playerName = player:get_player_name()
 	local meta = minetest.get_meta(pos)
-	
+
 	if meta:get_string("winner") ~= "" then
 		minetest.chat_send_player(playerName, "This game is over.")
 		return 0
@@ -94,10 +94,10 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	local thisMove -- will replace lastMove when move is legal
 	local playerWhite = meta:get_string("playerWhite")
 	local playerBlack = meta:get_string("playerBlack")
-	
+
 	if pieceFrom:find("white") then
 		if playerWhite ~= "" and playerWhite ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays white pieces !")
+			minetest.chat_send_player(playerName, "Someone else plays white pieces!")
 			return 0
 		end		
 		if lastMove ~= "" and lastMove ~= "black" then
@@ -112,7 +112,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		thisMove = "white"
 	elseif pieceFrom:find("black") then
 		if playerBlack ~= "" and playerBlack ~= playerName then
-			minetest.chat_send_player(playerName, "Someone else plays black pieces !")
+			minetest.chat_send_player(playerName, "Someone else plays black pieces!")
 			return 0
 		end
 		if lastMove ~= "" and lastMove ~= "white" then
@@ -126,12 +126,12 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		playerBlack = playerName
 		thisMove = "black"
 	end
-	
+
 	-- DETERMINISTIC MOVING
-	
+
 	local from_x, from_y = index_to_xy(from_index)
 	local to_x, to_y = index_to_xy(to_index)
-	
+
 	if pieceFrom:find("pawn") then
 		if thisMove == "white" then
 			-- white pawns can go up only
@@ -179,14 +179,14 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			else
 				return 0
 			end
-			
+
 			-- if x not changed,
 			--   ensure that destination cell is empty
 			-- elseif x changed one unit left or right
 			--   ensure the pawn is killing opponent piece
 			-- else
 			--   move is not legal - abort
-			
+
 			if from_x == to_x then
 				if pieceTo ~= "" then
 					return 0
@@ -250,7 +250,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		-- get relative pos
 		local dx = from_x - to_x
 		local dy = from_y - to_y
-		
+
 		-- get absolute values
 		if dx < 0 then
 			dx = -dx
@@ -258,17 +258,16 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		if dy < 0 then
 			dy = -dy
 		end
-		
+
 		-- sort x and y
 		if dx > dy then
 			dx, dy = dy, dx
 		end
-		
+
 		-- ensure that dx == 1 and dy == 2
 		if dx ~= 1 or dy ~= 2 then
 			return 0
 		end
-		
 		-- just ensure that destination cell does not contain friend piece
 		-- ^ it was done already thus everything ok
 
@@ -276,7 +275,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		-- get relative pos
 		local dx = from_x - to_x
 		local dy = from_y - to_y
-		
+
 		-- get absolute values
 		if dx < 0 then
 			dx = -dx
@@ -284,12 +283,12 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		if dy < 0 then
 			dy = -dy
 		end
-		
+
 		-- ensure dx and dy are equal
 		if dx ~= dy then
 			return 0
 		end
-		
+
 		if from_x < to_x then
 			if from_y < to_y then
 				-- moving right-down
@@ -331,7 +330,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	elseif pieceFrom:find("queen") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
-		
+
 		-- get absolute values
 		if dx < 0 then
 			dx = -dx
@@ -339,12 +338,12 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 		if dy < 0 then
 			dy = -dy
 		end
-		
+
 		-- ensure valid relative move
 		if dx ~= 0 and dy ~= 0 and dx ~= dy then
 			return 0
 		end
-		
+
 		if from_x == to_x then
 			if from_y < to_y then
 				-- goes down
@@ -416,7 +415,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				end
 			end		
 		end
-	
+
 	elseif pieceFrom:find("king") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
@@ -433,44 +432,44 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			return 0
 		end
 	end
-	
+
 	meta:set_string("playerWhite", playerWhite)
 	meta:set_string("playerBlack", playerBlack)
 	meta:set_string("lastMove", thisMove)
 	meta:set_string("lastMoveTime", minetest.get_gametime())
-	
+
 	if meta:get_string("lastMove") == "black" then
-		minetest.chat_send_player(playerWhite, playerName .. " has moved a " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+		minetest.chat_send_player(playerWhite, playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
 	elseif meta:get_string("lastMove") == "white" then
-		minetest.chat_send_player(playerBlack, playerName .. " has moved a " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+		minetest.chat_send_player(playerBlack, playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
 	end
-	
+
 	if pieceTo:find("king") then
-		minetest.chat_send_player(playerBlack, playerName .. " won the game.")
-		minetest.chat_send_player(playerWhite, playerName .. " won the game.")
+		minetest.chat_send_player(playerBlack, playerName.." won the game.")
+		minetest.chat_send_player(playerWhite, playerName.." won the game.")
 		meta:set_string("winner", thisMove)
 	end
-	
+
 	return 1
 end
-	
+
 function realchess.fields(pos, formname, fields, sender)
 	local playerName = sender:get_player_name()
 	local meta = minetest.get_meta(pos)
 
 	if fields.quit then return end
 
-	-- The chess can't be reset while playing unless if nobody has played during a while
+	-- the chess can't be reset during a started game unless if nobody has played during a while
 	if fields.new and (meta:get_string("playerWhite") == playerName or
 			meta:get_string("playerBlack") == playerName) then
 		realchess.init(pos)
 	elseif fields.new and meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime") + 200) and
+			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime")+200) and
 			(meta:get_string("playerWhite") ~= playerName or
 			meta:get_string("playerBlack") ~= playerName) then
 		realchess.init(pos)
 	else
-		minetest.chat_send_player(playerName, "You can't reset the chessboard, a game has been started.\nIf you weren't playing it, try again after a while.")
+		minetest.chat_send_player(playerName, "You can't reset the chessboard, a game has been started.\nIf you are not a current player, try again after a while.")
 	end
 end
 
@@ -478,14 +477,13 @@ function realchess.dig(pos, player)
 	local meta = minetest.get_meta(pos)
 	local playerName = player:get_player_name()
 
-	-- The chess can't be dug while playing unless if nobody has played during a while
-	if (meta:get_string("playerWhite") ~= "" or meta:get_string("playerBlack") ~= "") and
-			meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime") + 200) then
-		minetest.chat_send_player(playerName, "You can't dug the chessboard, a game has been started.\nIf you weren't playing it, try again after a while.")
+	-- the chess can't be dug during a started game unless if nobody has played during a while
+	if meta:get_string("lastMoveTime") ~= "" and
+			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime")+200) then
+		minetest.chat_send_player(playerName, "You can't dig the chessboard, a game has been started.\nReset it first if you're a current player, or try digging again after a while.")
 		return false
 	end
-	
+
 	return true
 end
 
@@ -528,7 +526,7 @@ local function register_piece(name, count)
 			description = color:gsub("^%l", string.upper).." "..name:gsub("^%l", string.upper),
 			inventory_image = name.."_"..color..".png",
 			stack_max = 1,
-			groups = {not_in_creative_inventory=1},
+			groups = {not_in_creative_inventory=1}
 		})
 	else
 		for i = 1, count do
@@ -536,7 +534,7 @@ local function register_piece(name, count)
 				description = color:gsub("^%l", string.upper).." "..name:gsub("^%l", string.upper),
 				inventory_image = name.."_"..color..".png",
 				stack_max = 1,
-				groups = {not_in_creative_inventory=1},
+				groups = {not_in_creative_inventory=1}
 			})
 		end
 	end
