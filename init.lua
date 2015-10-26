@@ -33,7 +33,11 @@ function realchess.init(pos)
 	meta:set_string("lastMove", "")
 	meta:set_string("lastMoveTime", "")
 	meta:set_string("winner", "")
-
+	meta:set_int("castlingBlackL", 1)
+	meta:set_int("castlingBlackR", 1)
+	meta:set_int("castlingWhiteL", 1)
+	meta:set_int("castlingWhiteR", 1)
+	
 	inv:set_list("board", {
 		"realchess:rook_black_1",
 		"realchess:knight_black_1",
@@ -162,7 +166,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				if from_x == to_x then
 					if pieceTo ~= "" then
 						return 0
-					elseif to_index >= 56 and to_index <= 64 then
+					elseif to_index >= 57 and to_index <= 64 then
 						inv:set_stack(from_list, from_index, "realchess:queen_black")
 					end
 				elseif from_x - 1 == to_x or from_x + 1 == to_x then
@@ -246,6 +250,20 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 			return 0
 		end
 
+		if thisMove == "white" then
+			if pieceFrom:find("1") then
+				meta:set_int("castlingWhiteL", 0)
+			elseif pieceFrom:find("2") then
+				meta:set_int("castlingWhiteR", 0)
+			end
+		elseif thisMove == "black" then
+			if pieceFrom:find("1") then
+				meta:set_int("castlingWhiteL", 0)
+			elseif pieceFrom:find("2") then
+				meta:set_int("castlingWhiteR", 0)
+			end
+		end
+		
 	elseif pieceFrom:find("knight") then
 		-- get relative pos
 		local dx = from_x - to_x
@@ -419,17 +437,81 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	elseif pieceFrom:find("king") then
 		local dx = from_x - to_x
 		local dy = from_y - to_y
+		local check = true
 		
-		-- get absolute values
-		if dx < 0 then
-			dx = -dx
-		end
-		if dy < 0 then
-			dy = -dy
+		if thisMove == "white" then
+			if from_y == 7 and to_y == 7 then
+				if to_x == 1 then
+					if meta:get_int("castlingWhiteL") == 1 and inv:get_stack(from_list, 57):get_name() == "realchess:rook_white_1" then
+						for i = 58, from_index - 1 do
+							if inv:get_stack(from_list, i):get_name() ~= "" then
+								return 0
+							end
+						end
+						inv:set_stack(from_list, 57, "")
+						inv:set_stack(from_list, 59, "realchess:rook_white_1")
+						check = false
+					end
+				elseif to_x == 6 then
+					if meta:get_int("castlingWhiteR") == 1 and inv:get_stack(from_list, 64):get_name() == "realchess:rook_white_2" then
+						for i = from_index + 1, 63 do
+							if inv:get_stack(from_list, i):get_name() ~= "" then
+								return 0
+							end
+						end
+						inv:set_stack(from_list, 62, "realchess:rook_white_2")
+						inv:set_stack(from_list, 64, "")
+						check = false
+					end
+				end
+			end
+		elseif thisMove == "black" then
+			if from_y == 0 and to_y == 0 then
+				if to_x == 1 then
+					if meta:get_int("castlingBlackL") == 1 and inv:get_stack(from_list, 1):get_name() == "realchess:rook_black_1" then
+						for i = 2, from_index - 1 do
+							if inv:get_stack(from_list, i):get_name() ~= "" then
+								return 0
+							end
+						end
+						inv:set_stack(from_list, 1, "")
+						inv:set_stack(from_list, 3, "realchess:rook_black_1")
+						check = false
+					end
+				elseif to_x == 6 then
+					if meta:get_int("castlingBlackR") == 1 and inv:get_stack(from_list, 8):get_name() == "realchess:rook_black_2" then
+						for i = from_index + 1, 7 do
+							if inv:get_stack(from_list, i):get_name() ~= "" then
+								return 0
+							end
+						end
+						inv:set_stack(from_list, 6, "realchess:rook_black_2")
+						inv:set_stack(from_list, 8, "")
+						check = false
+					end
+				end
+			end
 		end
 		
-		if dx > 1 or dy > 1 then
-			return 0
+		if check then
+			if dx < 0 then
+				dx = -dx
+			end
+			if dy < 0 then
+				dy = -dy
+			end
+			
+			if dx > 1 or dy > 1 then
+				return 0
+			end
+		end
+		
+		if thisMove == "white" then
+			meta:set_int("castlingWhiteL", 0)
+			meta:set_int("castlingWhiteR", 0)
+		elseif thisMove == "black" then
+			meta:set_int("castlingBlackL", 0)		
+			meta:set_int("castlingBlackR", 0)
 		end
 	end
 
