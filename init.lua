@@ -38,8 +38,8 @@ function realchess.init(pos)
 		"realchess:rook_black_1",
 		"realchess:knight_black_1",
 		"realchess:bishop_black_1",
-		"realchess:king_black",
 		"realchess:queen_black",
+		"realchess:king_black",
 		"realchess:bishop_black_2",
 		"realchess:knight_black_2",
 		"realchess:rook_black_2",
@@ -436,9 +436,9 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	meta:set_string("lastMoveTime", minetest.get_gametime())
 	
 	if meta:get_string("lastMove") == "black" then
-		minetest.chat_send_player(playerWhite, playerName .. " has moved the " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+		minetest.chat_send_player(playerWhite, playerName .. " has moved a " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
 	elseif meta:get_string("lastMove") == "white" then
-		minetest.chat_send_player(playerBlack, playerName .. " has moved the " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
+		minetest.chat_send_player(playerBlack, playerName .. " has moved a " .. pieceFrom:match("%a+:(%a+)") .. ", it's now your turn.")
 	end
 	
 	if pieceTo:find("king") then
