@@ -26,18 +26,18 @@ function realchess.init(pos)
 		"button[3.1,7.8;2,2;new;New game]"..
 		"list[context;board;0,0;8,8;]"..
 		slots)
-	
+
 	meta:set_string("infotext", "Chess Board")
 	meta:set_string("playerBlack", "")
 	meta:set_string("playerWhite", "")
 	meta:set_string("lastMove", "")
-	meta:set_string("lastMoveTime", "")
+	meta:set_int("lastMoveTime", 0)
 	meta:set_string("winner", "")
 	meta:set_int("castlingBlackL", 1)
 	meta:set_int("castlingBlackR", 1)
 	meta:set_int("castlingWhiteL", 1)
 	meta:set_int("castlingWhiteR", 1)
-	
+
 	inv:set_list("board", {
 		"realchess:rook_black_1",
 		"realchess:knight_black_1",
@@ -263,7 +263,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				meta:set_int("castlingWhiteR", 0)
 			end
 		end
-		
+
 	elseif pieceFrom:find("knight") then
 		-- get relative pos
 		local dx = from_x - to_x
@@ -492,7 +492,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 				end
 			end
 		end
-		
+
 		if check then
 			if dx < 0 then
 				dx = -dx
@@ -518,7 +518,7 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	meta:set_string("playerWhite", playerWhite)
 	meta:set_string("playerBlack", playerBlack)
 	meta:set_string("lastMove", thisMove)
-	meta:set_string("lastMoveTime", minetest.get_gametime())
+	meta:set_int("lastMoveTime", minetest.get_gametime())
 
 	if meta:get_string("lastMove") == "black" then
 		minetest.chat_send_player(playerWhite, playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
@@ -541,12 +541,12 @@ function realchess.fields(pos, formname, fields, sender)
 
 	if fields.quit then return end
 
-	-- the chess can't be reset during a started game unless if nobody has played during a while
+	-- the chess can't be reset during a started game unless if nobody has played during a while (~5 min. by default)
 	if fields.new and (meta:get_string("playerWhite") == playerName or
 			meta:get_string("playerBlack") == playerName) then
 		realchess.init(pos)
-	elseif fields.new and meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() >= tonumber(meta:get_string("lastMoveTime")+200) and
+	elseif fields.new and meta:get_int("lastMoveTime") ~= 0 and
+			minetest.get_gametime() >= meta:get_int("lastMoveTime") + 250 and
 			(meta:get_string("playerWhite") ~= playerName or
 			meta:get_string("playerBlack") ~= playerName) then
 		realchess.init(pos)
@@ -559,9 +559,9 @@ function realchess.dig(pos, player)
 	local meta = minetest.get_meta(pos)
 	local playerName = player:get_player_name()
 
-	-- the chess can't be dug during a started game unless if nobody has played during a while
-	if meta:get_string("lastMoveTime") ~= "" and
-			minetest.get_gametime() <= tonumber(meta:get_string("lastMoveTime")+200) then
+	-- the chess can't be dug during a started game unless if nobody has played during a while (~5 min. by default)
+	if meta:get_int("lastMoveTime") ~= 0 and
+			minetest.get_gametime() <= meta:get_int("lastMoveTime") + 250 then
 		minetest.chat_send_player(playerName, "You can't dig the chessboard, a game has been started.\nReset it first if you're a current player, or try digging again after a while.")
 		return false
 	end
