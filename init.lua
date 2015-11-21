@@ -1,4 +1,5 @@
 local realchess = {}
+screwdriver = screwdriver or {}
 
 local function index_to_xy(index)
 	index = index - 1
@@ -525,9 +526,9 @@ function realchess.move(pos, from_list, from_index, to_list, to_index, count, pl
 	meta:set_int("lastMoveTime", minetest.get_gametime())
 
 	if meta:get_string("lastMove") == "black" then
-		minetest.chat_send_player(playerWhite, playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
+		minetest.chat_send_player(playerWhite, "["..os.date("%H:%M:%S").."] "..playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
 	elseif meta:get_string("lastMove") == "white" then
-		minetest.chat_send_player(playerBlack, playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
+		minetest.chat_send_player(playerBlack, "["..os.date("%H:%M:%S").."] "..playerName.." has moved a "..pieceFrom:match("%a+:(%a+)")..", it's now your turn.")
 	end
 
 	if pieceTo:find("king") then
@@ -593,10 +594,11 @@ minetest.register_node("realchess:chessboard", {
 	tiles = {"chessboard_top.png", "chessboard_top.png",
 		"chessboard_sides.png", "chessboard_sides.png",
 		"chessboard_top.png", "chessboard_top.png"},
-	groups = {choppy=3, flammable=3},
+	groups = {choppy=3, oddly_breakable_by_hand=2, flammable=3},
 	sounds = default.node_sound_wood_defaults(),
 	node_box = {type = "fixed", fixed = {-0.5, -0.5, -0.5, 0.5, -0.4375, 0.5}},
 	sunlight_propagates = true,
+	on_rotate = screwdriver.rotate_simple,
 	can_dig = realchess.dig,
 	on_construct = realchess.init,
 	on_receive_fields = realchess.fields,
